@@ -4,7 +4,6 @@ import { ensureNoteExists } from '../utils/ensureNoteExists.js';
 
 export const getAllNotes = ctrlWrapper(async (req, res) => {
   const notes = await Note.find();
-  ensureNoteExists(notes);
   res.status(200).json(notes);
 });
 
