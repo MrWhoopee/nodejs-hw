@@ -3,8 +3,34 @@ import { ctrlWrapper } from '../utils/ctrlWrapper.js';
 import { ensureNoteExists } from '../utils/ensureNoteExists.js';
 
 export const getAllNotes = ctrlWrapper(async (req, res) => {
-  const notes = await Note.find();
-  res.status(200).json(notes);
+  const { page = 1, perPage = 10, tag, search } = req.query;
+
+  const skip = (page - 1) * perPage;
+
+  const noteQuery = Note.find();
+
+  if (search) {
+    noteQuery.where({ $text: { $search: search } });
+  }
+
+  if (tag) {
+    noteQuery.where('tag').equals(tag);
+  }
+
+  const [totalNotes, notes] = await Promise.all([
+    noteQuery.clone().countDocuments(),
+    noteQuery.skip(skip).limit(perPage),
+  ]);
+
+  const totalPages = Math.ceil(totalNotes / perPage);
+
+  res.status(200).json({
+    page,
+    perPage,
+    totalNotes,
+    totalPages,
+    notes,
+  });
 });
 
 export const getNoteById = ctrlWrapper(async (req, res) => {
