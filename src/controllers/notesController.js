@@ -48,7 +48,9 @@ export const createNote = ctrlWrapper(async (req, res) => {
 
 export const updateNote = ctrlWrapper(async (req, res) => {
   const { noteId } = req.params;
-  const note = await Note.findByIdAndUpdate(noteId, req.body, { new: true });
+  const note = await Note.findByIdAndUpdate(noteId, req.body, {
+    returnDocument: 'after',
+  });
   ensureNoteExists(note);
   res.status(200).json(note);
 });
