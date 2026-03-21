@@ -7,15 +7,17 @@ export const getAllNotes = ctrlWrapper(async (req, res) => {
 
   const skip = (page - 1) * perPage;
 
-  const noteQuery = Note.find();
+  const filter = { userId: req.user._id };
 
   if (search) {
-    noteQuery.where({ $text: { $search: search } });
+    filter.$text = { $search: search };
   }
 
   if (tag) {
-    noteQuery.where('tag').equals(tag);
+    filter.tag = tag;
   }
+
+  const noteQuery = Note.find(filter);
 
   const [totalNotes, notes] = await Promise.all([
     noteQuery.clone().countDocuments(),
@@ -35,29 +37,37 @@ export const getAllNotes = ctrlWrapper(async (req, res) => {
 
 export const getNoteById = ctrlWrapper(async (req, res) => {
   const { noteId } = req.params;
-  const note = await Note.findById(noteId);
+  const note = await Note.findOne({ _id: noteId, userId: req.user._id });
   ensureNoteExists(note);
   res.status(200).json(note);
 });
 
 export const createNote = ctrlWrapper(async (req, res) => {
-  const note = await Note.create(req.body);
+  const note = await Note.create({
+    ...req.body,
+    userId: req.user._id,
+  });
 
   res.status(201).json(note);
 });
 
 export const updateNote = ctrlWrapper(async (req, res) => {
   const { noteId } = req.params;
-  const note = await Note.findByIdAndUpdate(noteId, req.body, {
-    returnDocument: 'after',
-  });
+  const note = await Note.findOneAndUpdate(
+    { _id: noteId, userId: req.user._id },
+    req.body,
+    { returnDocument: 'after' },
+  );
   ensureNoteExists(note);
   res.status(200).json(note);
 });
 
 export const deleteNote = ctrlWrapper(async (req, res) => {
   const { noteId } = req.params;
-  const note = await Note.findByIdAndDelete(noteId);
+  const note = await Note.findOneAndDelete({
+    _id: noteId,
+    userId: req.user._id,
+  });
   ensureNoteExists(note);
   res.status(200).json(note);
 });
